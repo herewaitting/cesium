@@ -118,19 +118,17 @@ describe('Scene/Vector3DTileContent', function() {
 
     beforeAll(function() {
         scene = createScene();
-
-        rectangle = Rectangle.fromDegrees(-40.0, -40.0, 40.0, 40.0);
-        reusableGlobePrimitive = createPrimitive(rectangle, Pass.GLOBE);
-        reusableTilesetPrimitive = createPrimitive(rectangle, Pass.CESIUM_3D_TILE);
     });
 
     afterAll(function() {
-        reusableGlobePrimitive.destroy();
-        reusableTilesetPrimitive.destroy();
         scene.destroyForSpecs();
     });
 
     beforeEach(function() {
+        rectangle = Rectangle.fromDegrees(-40.0, -40.0, 40.0, 40.0);
+        reusableGlobePrimitive = createPrimitive(rectangle, Pass.GLOBE);
+        reusableTilesetPrimitive = createPrimitive(rectangle, Pass.CESIUM_3D_TILE);
+
         // wrap rectangle primitive so it gets executed during the globe pass and 3D Tiles pass to lay down depth
         globePrimitive = new MockPrimitive(reusableGlobePrimitive, Pass.GLOBE);
         tilesetPrimitive = new MockPrimitive(reusableTilesetPrimitive, Pass.CESIUM_3D_TILE);
@@ -142,6 +140,8 @@ describe('Scene/Vector3DTileContent', function() {
         globePrimitive = globePrimitive && !globePrimitive.isDestroyed() && globePrimitive.destroy();
         tilesetPrimitive = tilesetPrimitive && !tilesetPrimitive.isDestroyed() && tilesetPrimitive.destroy();
         tileset = tileset && !tileset.isDestroyed() && tileset.destroy();
+        reusableGlobePrimitive.destroy();
+        reusableTilesetPrimitive.destroy();
     });
 
     function expectPick(scene) {
