@@ -102,6 +102,7 @@ GlobeSurfaceShaderSet.prototype.getShaderProgram = function (options) {
   var colorToAlpha = options.colorToAlpha;
   var showUndergroundColor = options.showUndergroundColor;
   var translucent = options.translucent;
+  var tailor = options.applyTailor;
 
   var quantization = 0;
   var quantizationDefine = "";
@@ -183,7 +184,7 @@ GlobeSurfaceShaderSet.prototype.getShaderProgram = function (options) {
   }
 
   surfaceShader = shadersByFlags[flags];
-  if (
+  if (tailor ||
     !defined(surfaceShader) ||
     surfaceShader.material !== this.material ||
     surfaceShader.clippingShaderState !== currentClippingShaderState
@@ -196,6 +197,10 @@ GlobeSurfaceShaderSet.prototype.getShaderProgram = function (options) {
       fs.sources.unshift(
         getClippingFunction(clippingPlanes, frameState.context)
       ); // Need to go before GlobeFS
+    }
+
+    if (tailor) {
+      fs.defines.push("APPLY_TAILOR");
     }
 
     vs.defines.push(quantizationDefine);

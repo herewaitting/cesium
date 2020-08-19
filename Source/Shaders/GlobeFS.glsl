@@ -9,6 +9,19 @@ uniform bool u_dayTextureUseWebMercatorT[TEXTURE_UNITS];
 uniform float u_dayTextureAlpha[TEXTURE_UNITS];
 #endif
 
+#ifdef APPLY_FLOOD
+uniform sampler2D u_floodArea;
+uniform bool u_enableFlood;
+uniform bool u_showFloodOnly;
+#endif
+
+#ifdef APPLY_TAILOR
+uniform sampler2D u_tailorArea;
+uniform bool u_enableTailor;
+uniform bool u_showTailorOnly;
+#endif
+
+
 #ifdef APPLY_DAY_NIGHT_ALPHA
 uniform float u_dayTextureNightAlpha[TEXTURE_UNITS];
 uniform float u_dayTextureDayAlpha[TEXTURE_UNITS];
@@ -387,6 +400,10 @@ void main()
     czm_material material = czm_getMaterial(materialInput);
     vec4 materialColor = vec4(material.diffuse, material.alpha);
     color = alphaBlend(materialColor, color);
+    float ymColor = texture2D(u_floodArea, materialInput.st);
+    if(ymColor.a > 0.0 && u_enableFlood){
+        color.xyz = mix(color.xyz, material.diffuse, material.alpha);
+    }
 #endif
 
 #ifdef ENABLE_VERTEX_LIGHTING
@@ -466,6 +483,13 @@ void main()
     {
       vec4 alphaByDistance = gl_FrontFacing ? u_frontFaceAlphaByDistance : u_backFaceAlphaByDistance;
       finalColor.a *= interpolateByDistance(alphaByDistance, v_distance);
+    }
+#endif
+
+#ifdef APPLY_TAILOR
+    vec4 ymColor = texture2D(u_tailorArea, gl_FragCoord.xy / czm_viewport.zw);
+    if(ymColor.r >= 0.9){
+        discard;
     }
 #endif
 

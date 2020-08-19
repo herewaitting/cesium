@@ -476,10 +476,18 @@ Object.defineProperties(Globe.prototype, {
       return this._material;
     },
     set: function (material) {
+      // if (this._material !== material) {
+      //   this._material = material;
+      //   makeShadersDirty(this);
+      // }
       if (this._material !== material) {
         this._material = material;
-        makeShadersDirty(this);
-      }
+        if(material&&(material.type=="FLOOD")){// 史廷春
+            makeShadersWaJue(this, material.type);
+        }else{
+            makeShadersDirty(this);
+        }
+    }
     },
   },
 
@@ -552,6 +560,34 @@ Object.defineProperties(Globe.prototype, {
     },
   },
 });
+
+// 史廷春
+function makeShadersWaJue(globe, defineTxt) {
+  var defines = [];
+
+  var requireNormals = defined(globe._material) && (globe._material.shaderSource.match(/slope/) || globe._material.shaderSource.match('normalEC'));
+
+  var fragmentSources = [GroundAtmosphere];
+  if (defined(globe._material) && (!requireNormals || globe._terrainProvider.requestVertexNormals)) {
+      fragmentSources.push(globe._material.shaderSource);
+      defines.push('APPLY_' + defineTxt);
+      globe._surface._tileProvider.uniformMap = globe._material._uniforms;
+  } else {
+      globe._surface._tileProvider.uniformMap = undefined;
+  }
+  fragmentSources.push(GlobeFS);
+
+  globe._surfaceShaderSet.baseVertexShaderSource = new ShaderSource({
+      sources : [GroundAtmosphere, GlobeVS],
+      defines : defines
+  });
+
+  globe._surfaceShaderSet.baseFragmentShaderSource = new ShaderSource({
+      sources : fragmentSources,
+      defines : defines
+  });
+  globe._surfaceShaderSet.material = globe._material;
+}
 
 function makeShadersDirty(globe) {
   var defines = [];

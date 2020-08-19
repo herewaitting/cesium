@@ -51,6 +51,8 @@ import TerrainState from "./TerrainState.js";
 import TileBoundingRegion from "./TileBoundingRegion.js";
 import TileSelectionResult from "./TileSelectionResult.js";
 
+import ExtendBySTC from "../MyExtend/ExtendBySTC";
+
 /**
  * Provides quadtree tiles representing the surface of the globe.  This type is intended to be used
  * with {@link QuadtreePrimitive}.
@@ -1671,6 +1673,25 @@ function createTileUniformMap(frameState, globeSurfaceTileProvider) {
     u_undergroundColorAlphaByDistance: function () {
       return this.properties.undergroundColorAlphaByDistance;
     },
+    // 史廷春
+    u_floodArea: function() {
+      return ExtendBySTC.floodArea && ExtendBySTC.floodArea._colorTextures[0] || frameState.context.defaultTexture;
+    },
+    u_tailorArea: function() {
+      return ExtendBySTC.tailorArea && ExtendBySTC.tailorArea._colorTextures[0] || frameState.context.defaultTexture;
+    },
+    u_showFloodOnly: function() {
+      return ExtendBySTC.showFloodOnly;
+    },
+    u_showTailorOnly: function() {
+      return ExtendBySTC.showTailorOnly;
+    },
+    u_enableFlood: function() {
+      return ExtendBySTC.enableFlood;
+    },
+    u_enableTailor: function() {
+      return ExtendBySTC.enableTailor;
+    },
 
     // make a separate object so that changes to the properties are seen on
     // derived commands that combine another uniform map with this one.
@@ -2350,8 +2371,12 @@ function addDrawCommandsForTile(tileProvider, tile, frameState) {
     var applySplit = false;
     var applyCutout = false;
     var applyColorToAlpha = false;
+    var applyTailor = false;
+    applyTailor = tileProvider.applyTailor;
 
-    while (numberOfDayTextures < maxTextures && imageryIndex < imageryLen) {
+    // 史廷春
+    // while (numberOfDayTextures < maxTextures && imageryIndex < imageryLen) {
+    while (numberOfDayTextures < maxTextures - 1 && imageryIndex < imageryLen) {
       var tileImagery = tileImageryCollection[imageryIndex];
       var imagery = tileImagery.readyImagery;
       ++imageryIndex;
@@ -2573,6 +2598,7 @@ function addDrawCommandsForTile(tileProvider, tile, frameState) {
     surfaceShaderSetOptions.colorToAlpha = applyColorToAlpha;
     surfaceShaderSetOptions.showUndergroundColor = showUndergroundColor;
     surfaceShaderSetOptions.translucent = translucent;
+    surfaceShaderSetOptions.applyTailor = applyTailor;
 
     var count = surfaceTile.renderedMesh.indices.length;
     if (!showSkirts) {
