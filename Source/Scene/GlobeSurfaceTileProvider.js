@@ -1675,13 +1675,18 @@ function createTileUniformMap(frameState, globeSurfaceTileProvider) {
     },
     // 史廷春
     u_floodArea: function() {
-      return ExtendBySTC.floodArea && ExtendBySTC.floodArea._colorTextures[0] || frameState.context.defaultTexture;
+      if (ExtendBySTC.floodArea && ExtendBySTC.floodArea._colorTextures && ExtendBySTC.floodArea._colorTextures[0]) {
+        return ExtendBySTC.floodArea._colorTextures[0];
+      } else {
+        return frameState.context.defaultTexture;
+      }
     },
     u_tailorArea: function() {
-      return ExtendBySTC.tailorArea && ExtendBySTC.tailorArea._colorTextures[0] || frameState.context.defaultTexture;
-    },
-    u_showFloodOnly: function() {
-      return ExtendBySTC.showFloodOnly;
+      if (ExtendBySTC.tailorArea && ExtendBySTC.tailorArea._colorTextures && ExtendBySTC.tailorArea._colorTextures[0]) {
+        return ExtendBySTC.tailorArea._colorTextures[0];
+      } else {
+        return frameState.context.defaultTexture;
+      }
     },
     u_showTailorOnly: function() {
       return ExtendBySTC.showTailorOnly;
@@ -1691,6 +1696,14 @@ function createTileUniformMap(frameState, globeSurfaceTileProvider) {
     },
     u_enableTailor: function() {
       return ExtendBySTC.enableTailor;
+    },
+    floodVar: function () {
+      var arr = ExtendBySTC.floodVar;
+      if (arr) {
+        return new Cartesian4(arr[0],arr[1],arr[2],arr[3]);
+      } else {
+        return new Cartesian4();
+      }
     },
 
     // make a separate object so that changes to the properties are seen on
@@ -2376,7 +2389,7 @@ function addDrawCommandsForTile(tileProvider, tile, frameState) {
 
     // 史廷春
     // while (numberOfDayTextures < maxTextures && imageryIndex < imageryLen) {
-    while (numberOfDayTextures < maxTextures - 1 && imageryIndex < imageryLen) {
+    while (numberOfDayTextures < maxTextures - 2 && imageryIndex < imageryLen) {
       var tileImagery = tileImageryCollection[imageryIndex];
       var imagery = tileImagery.readyImagery;
       ++imageryIndex;

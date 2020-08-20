@@ -482,7 +482,7 @@ Object.defineProperties(Globe.prototype, {
       // }
       if (this._material !== material) {
         this._material = material;
-        if(material&&(material.type=="FLOOD")){// 史廷春
+        if(material&&(material.type=="FLOOD" || material.type=="TAILOR")){// 史廷春
             makeShadersWaJue(this, material.type);
         }else{
             makeShadersDirty(this);
@@ -571,6 +571,7 @@ function makeShadersWaJue(globe, defineTxt) {
   if (defined(globe._material) && (!requireNormals || globe._terrainProvider.requestVertexNormals)) {
       fragmentSources.push(globe._material.shaderSource);
       defines.push('APPLY_' + defineTxt);
+      defines.push("APPLY_MATERIAL");
       globe._surface._tileProvider.uniformMap = globe._material._uniforms;
   } else {
       globe._surface._tileProvider.uniformMap = undefined;

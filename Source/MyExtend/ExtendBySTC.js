@@ -1,8 +1,8 @@
 
-const ExtendBySTC = {
+var ExtendBySTC = {
     floodArea: undefined,
-    showFloodOnly: undefined,
     enableFlood: undefined,
+    tailorArea: undefined,
     enableTailor: undefined,
     floodVar: [],
 }

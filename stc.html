@@ -19,6 +19,9 @@
         </style>
         <link rel="stylesheet" href="./Build/CesiumUnminified/Widgets/Widgets.css" />
         <script src="./Build/CesiumUnminified/Cesium.js"></script>
+        <script src="./data.js"></script>
+        <script src="./yanmo.js"></script>
+        <script src="./jiancai.js"></script>
     </head>
     <body>
         <div id="app"></div>
@@ -29,52 +32,78 @@
                     "https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer",
                 })
             });
-
-            Cesium.ExtendBySTC.fboIndex = 0;
-
-            let poss = [
-                [90, 30],
-                [90,31],
-                [91,31],
-                [91,30]
-            ];
-            let wldps = [];
-            poss.forEach((item) => {
-                wldps.push(Cesium.Cartesian3.fromDegrees(item[0], item[1]));
+            let newPos = [];
+            bianjie.forEach(function(item) {
+                newPos.push({
+                    longitude: item[0],
+                    latitude: item[1]
+                });
             });
-
-            var polygon = new Cesium.PolygonGeometry({
-                polygonHierarchy : new Cesium.PolygonHierarchy(wldps)
-            });
-            // var geometry = Cesium.PolygonGeometry.createGeometry(polygon);
-            const pi = new Cesium.GeometryInstance({
-                geometry : polygon,
-                attributes : {
-                    color : Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.RED)
+            const poss = [
+                {
+                    longitude: 90,
+                    latitude: 30,
                 },
-                id : 'top'
+                {
+                    longitude: 90.2,
+                    latitude: 30.2,
+                },
+                {
+                    longitude: 90,
+                    latitude: 31,
+                },
+                {
+                    longitude: 91,
+                    latitude: 31,
+                },
+                {
+                    longitude: 90.8,
+                    latitude: 30.5,
+                },
+                {
+                    longitude: 91,
+                    latitude: 30,
+                },
+            ];
+            var myyanmo;
+             myyanmo = new YanMo(viewer, {
+                positions: newPos,
+                speed: 0.1,
+                minHeight: 4740,
+                maxHeight: 7500,
             });
-            const stc =  viewer.scene.primitives.add(new Cesium.GroundPrimitive({
-                geometryInstances : pi
-            }));
-            const context = viewer.scene.context;
-            var  brightColorT = new Cesium.Texture({
-                context: context,
-                width: context.drawingBufferWidth,
-                height: context.drawingBufferHeight,
-                pixelFormat : Cesium.PixelFormat.RGBA,
-                pixelDatatype : Cesium.PixelDatatype.FLOAT,
-                flipY : false
-            });
-    
-            var brightColorFbo = new Cesium.Framebuffer({
-                context: context,
-                colorTextures: [brightColorT],
-                // depthStencilTexture : depthStencilTexture,
-                // destroyAttachments : false
-            });
+            var myjiancai;
+            // myjiancai = new Tailor(viewer, {
+            //     positions: newPos,
+            // });
 
-            // var  brightColorT1 = new Cesium.Texture({
+            // let poss = [
+            //     [90, 30],
+            //     [90,31],
+            //     [91,31],
+            //     [91,30]
+            // ];
+            // let wldps = [];
+            // poss.forEach((item) => {
+            //     wldps.push(Cesium.Cartesian3.fromDegrees(item[0], item[1]));
+            // });
+
+            // var polygon = new Cesium.PolygonGeometry({
+            //     polygonHierarchy : new Cesium.PolygonHierarchy(wldps)
+            // });
+            // // var geometry = Cesium.PolygonGeometry.createGeometry(polygon);
+            // const pi = new Cesium.GeometryInstance({
+            //     geometry : polygon,
+            //     attributes : {
+            //         color : Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.RED)
+            //     },
+            //     id : 'top'
+            // });
+            // const stc =  viewer.scene.primitives.add(new Cesium.GroundPrimitive({
+            //     geometryInstances : pi
+            // }));
+            // const context = viewer.scene.context;
+            // var  brightColorT = new Cesium.Texture({
             //     context: context,
             //     width: context.drawingBufferWidth,
             //     height: context.drawingBufferHeight,
@@ -83,38 +112,75 @@
             //     flipY : false
             // });
     
-            // var brightColorFbo1 = new Cesium.Framebuffer({
+            // var brightColorFbo = new Cesium.Framebuffer({
             //     context: context,
-            //     colorTextures: [brightColorT1],
+            //     colorTextures: [brightColorT],
             //     // depthStencilTexture : depthStencilTexture,
             //     // destroyAttachments : false
             // });
 
+            // // var  brightColorT1 = new Cesium.Texture({
+            // //     context: context,
+            // //     width: context.drawingBufferWidth,
+            // //     height: context.drawingBufferHeight,
+            // //     pixelFormat : Cesium.PixelFormat.RGBA,
+            // //     pixelDatatype : Cesium.PixelDatatype.FLOAT,
+            // //     flipY : false
+            // // });
+    
+            // // var brightColorFbo1 = new Cesium.Framebuffer({
+            // //     context: context,
+            // //     colorTextures: [brightColorT1],
+            // //     // depthStencilTexture : depthStencilTexture,
+            // //     // destroyAttachments : false
+            // // });
 
 
 
-            stc._clearCommand = new Cesium.ClearCommand({
-            color: new Cesium.Color(0.0, 0.0, 0.0, 0.0),
-            depth: 1.0,
-            stencil: 0,
-            });
-            stc._clearCommand.framebuffer = brightColorFbo;
 
-            function test() {
-                stc.customFramebuffer = brightColorFbo;
-                Cesium.ExtendBySTC.tailorArea = brightColorFbo;
-                viewer.scene.globe._surface._tileProvider.applyTailor = true;
-            }
+            // stc._clearCommand = new Cesium.ClearCommand({
+            // color: new Cesium.Color(0.0, 0.0, 0.0, 0.0),
+            // depth: 1.0,
+            // stencil: 0,
+            // });
+            // stc._clearCommand.framebuffer = brightColorFbo;
 
-            // function testFlood(){
+            // function test() {
             //     stc.customFramebuffer = brightColorFbo;
-            //     Cesium.ExtendBySTC.floodArea = brightColorFbo;
-            //     viewer.scene.globe.material = Cesium.Material.fromType("TAILOR");
+            //     Cesium.ExtendBySTC.tailorArea = brightColorFbo;
+            //     viewer.scene.globe._surface._tileProvider.applyTailor = true;
             // }
 
-            // viewer.scene._postRender.addEventListener(function() {
-            //     stc._clearCommand.execute(context);
-            // });
+            // // function testFlood(){
+            // //     stc.customFramebuffer = brightColorFbo;
+            // //     Cesium.ExtendBySTC.floodArea = brightColorFbo;
+            // //     viewer.scene.globe.material = Cesium.Material.fromType("TAILOR");
+            // // }
+
+            // // viewer.scene._postRender.addEventListener(function() {
+            // //     stc._clearCommand.execute(context);
+            // // });
+
+
+            function test() {
+                var fragmentShaderSource =
+                    'uniform sampler2D colorTexture; \n' +
+                    'uniform sampler2D daoyingTexture; \n' +
+                    'varying vec2 v_textureCoordinates; \n' +
+                    'void main(void) \n' +
+                    '{ \n' +
+                    '    vec4 daoying = texture2D(daoyingTexture, v_textureCoordinates); \n' +
+                    '    gl_FragColor = daoying; \n' +
+                    '} \n';
+                viewer.scene.postProcessStages.add(new Cesium.PostProcessStage({
+                    fragmentShader : fragmentShaderSource,
+                    uniforms:{
+                        daoyingTexture:function(){
+                            return myjiancai && myjiancai.yanmoFbo._colorTextures[0] || myyanmo && myyanmo.yanmoFbo._colorTextures[0]
+                        }
+                    }
+                }));
+            }
 
 
         </script>

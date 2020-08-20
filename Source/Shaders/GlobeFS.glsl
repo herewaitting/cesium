@@ -9,17 +9,11 @@ uniform bool u_dayTextureUseWebMercatorT[TEXTURE_UNITS];
 uniform float u_dayTextureAlpha[TEXTURE_UNITS];
 #endif
 
-#ifdef APPLY_FLOOD
-uniform sampler2D u_floodArea;
-uniform bool u_enableFlood;
-uniform bool u_showFloodOnly;
-#endif
-
-#ifdef APPLY_TAILOR
-uniform sampler2D u_tailorArea;
-uniform bool u_enableTailor;
-uniform bool u_showTailorOnly;
-#endif
+// #ifdef APPLY_TAILOR
+// uniform sampler2D u_tailorArea;
+// uniform bool u_enableTailor;
+// uniform bool u_showTailorOnly;
+// #endif
 
 
 #ifdef APPLY_DAY_NIGHT_ALPHA
@@ -120,6 +114,11 @@ varying vec3 v_normalMC;
 varying vec3 v_normalEC;
 
 #ifdef APPLY_MATERIAL
+uniform sampler2D u_tailorArea;
+uniform bool u_enableTailor;
+uniform bool u_showTailorOnly;
+uniform sampler2D u_floodArea;
+uniform bool u_enableFlood;
 varying float v_height;
 varying float v_slope;
 varying float v_aspect;
@@ -399,10 +398,14 @@ void main()
     materialInput.aspect = v_aspect;
     czm_material material = czm_getMaterial(materialInput);
     vec4 materialColor = vec4(material.diffuse, material.alpha);
-    color = alphaBlend(materialColor, color);
-    float ymColor = texture2D(u_floodArea, materialInput.st);
+    // color = alphaBlend(materialColor, color);
+    vec4 ymColor = texture2D(u_floodArea, gl_FragCoord.xy / czm_viewport.zw);
     if(ymColor.a > 0.0 && u_enableFlood){
         color.xyz = mix(color.xyz, material.diffuse, material.alpha);
+    }
+    vec4 tColor = texture2D(u_tailorArea, gl_FragCoord.xy / czm_viewport.zw);
+    if(tColor.r <= 0.5 && u_enableTailor){
+        discard;
     }
 #endif
 
@@ -486,12 +489,12 @@ void main()
     }
 #endif
 
-#ifdef APPLY_TAILOR
-    vec4 ymColor = texture2D(u_tailorArea, gl_FragCoord.xy / czm_viewport.zw);
-    if(ymColor.r >= 0.9){
-        discard;
-    }
-#endif
+// #ifdef APPLY_TAILOR
+//     vec4 ymColor = texture2D(u_tailorArea, gl_FragCoord.xy / czm_viewport.zw);
+//     if(ymColor.r <= 0.5 && u_enableTailor){
+//         discard;
+//     }
+// #endif
 
     gl_FragColor = finalColor;
 }
