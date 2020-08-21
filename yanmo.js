@@ -1,4 +1,3 @@
-
 function YanMo(viewer, option) {
     if (!viewer || !option.positions) {
         return;
@@ -22,13 +21,9 @@ function YanMo(viewer, option) {
 }
 
 YanMo.prototype.init = function() {
-    // 根据坐标计算矩阵、局部坐标数据等
     this.computedCenter(this.positions);
-    // 创建正交相机
     this.prepareCamera();
-    // 准备FBO
     this.prepareFBO();
-    // 绘制polygon
     this.drawPolygon();
     this.setFloodMaterial();
     this.beginFlood();
@@ -93,15 +88,14 @@ YanMo.prototype.computedCenter = function(positions) {
     }
     this.inverTrans = Cesium.Matrix4.inverse(this.trans, new Cesium.Matrix4());
     var indexs = polygon.indices;
-    console.log(polygon);
     var positionVal = polygon.attributes.position.values;
     var len = positionVal.length;
     var localPos = [];
     var localVertex = [];
-    let minX = 9999999;
-    let minY = 9999999;
-    let maxX = -9999999;
-    let maxY = -9999999;
+    var minX = 9999999;
+    var minY = 9999999;
+    var maxX = -9999999;
+    var maxY = -9999999;
     for(var i=0; i<len; i+=3){
         var currx = positionVal[i];
         var curry = positionVal[i+1];
@@ -182,17 +176,9 @@ YanMo.prototype.prepareFBO = function () {
         pixelDatatype : Cesium.PixelDatatype.FLOAT,
         flipY : false
     });
-    // var depthStencilTexture = new Cesium.Texture({
-    //     context : context,
-    //     width : context.drawingBufferWidth,
-    //     height : context.drawingBufferWidth * this.ratio,
-    //     pixelFormat : Cesium.PixelFormat.DEPTH_STENCIL,
-    //     pixelDatatype : Cesium.PixelDatatype.UNSIGNED_INT_24_8
-    // });
 
     this.yanmoFbo = new Cesium.Framebuffer({
         context: context,
-        // depthStencilTexture : depthStencilTexture,
         colorTextures: [this.yanmoTex],
         destroyAttachments : false
     });
@@ -200,7 +186,6 @@ YanMo.prototype.prepareFBO = function () {
 
 YanMo.prototype.drawPolygon = function() {
     var context = this.viewer.scene.context;
-    // var width = context.drawingBufferWidth;
     var width = 4096;
     var height = width * this.ratio;
     this._passState = new Cesium.PassState(context);
@@ -219,24 +204,21 @@ YanMo.prototype.setFloodMaterial = function () {
 }
 
 var PolygonVS = 
-`
-attribute vec3 position;
-void main()
-{
-    vec4 pos = vec4(position.xyz,1.0);
-    gl_Position = czm_projection*pos;
-    // gl_Position.xy = gl_Position.xy / 2.0 - vec2(0.5);
-}`;
+"attribute vec3 position;\n\
+void main()\n\
+{\n\
+    vec4 pos = vec4(position.xyz,1.0);\n\
+    gl_Position = czm_projection*pos;\n\
+}";
 var PolygonFS = 
-`
-#ifdef GL_FRAGMENT_PRECISION_HIGH
-    precision highp float;
-#else
-    precision mediump float;
-#endif
-void main()
-{
-    gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
-}
-`;
-
+"\n\
+#ifdef GL_FRAGMENT_PRECISION_HIGH\n\
+    precision highp float;\n\
+#else\n\
+    precision mediump float;\n\
+#endif\n\
+void main()\n\
+{\n\
+    gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n\
+}\n\
+";
