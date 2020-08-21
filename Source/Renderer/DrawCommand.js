@@ -565,13 +565,13 @@ DrawCommand.shallowClone = function (command, result) {
  * @param {PassState} [passState] The state for the current render pass.
  */
 DrawCommand.prototype.execute = function (context, passState) {
-  // 史廷春
-  if (this.owner && this.owner.customFramebuffer) {
-    if (this.owner._clearCommand) {
-      this.owner._clearCommand.execute(context);
-    }
-    this.framebuffer = this.owner.customFramebuffer;
-  }
+  // // 史廷春
+  // if (this.owner && this.owner.customFramebuffer) {
+  //   if (this.owner._clearCommand) {
+  //     this.owner._clearCommand.execute(context);
+  //   }
+  //   this.framebuffer = this.owner.customFramebuffer;
+  // }
   context.draw(this, passState);
 };
 export default DrawCommand;

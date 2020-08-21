@@ -1705,6 +1705,15 @@ function createTileUniformMap(frameState, globeSurfaceTileProvider) {
         return new Cartesian4();
       }
     },
+    u_inverCenterMat: function() {
+      return ExtendBySTC.inverCenterMat || new Matrix4();
+    },
+    u_floodRect: function() {
+      return ExtendBySTC.floodRect || new Cartesian4();
+    },
+    u_tailorRect: function() {
+      return ExtendBySTC.tailorRect || new Cartesian4();
+    },
 
     // make a separate object so that changes to the properties are seen on
     // derived commands that combine another uniform map with this one.

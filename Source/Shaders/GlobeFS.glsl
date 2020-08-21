@@ -118,7 +118,10 @@ uniform sampler2D u_tailorArea;
 uniform bool u_enableTailor;
 uniform bool u_showTailorOnly;
 uniform sampler2D u_floodArea;
+uniform mat4 u_inverCenterMat;
 uniform bool u_enableFlood;
+uniform vec4 u_floodRect;
+uniform vec4 u_tailorRect;
 varying float v_height;
 varying float v_slope;
 varying float v_aspect;
@@ -379,7 +382,6 @@ void main()
     if (mask > 0.0)
     {
         mat3 enuToEye = czm_eastNorthUpToEyeCoordinates(v_positionMC, normalEC);
-
         vec2 ellipsoidTextureCoordinates = czm_ellipsoidWgs84TextureCoordinates(normalMC);
         vec2 ellipsoidFlippedTextureCoordinates = czm_ellipsoidWgs84TextureCoordinates(normalMC.zyx);
 
@@ -399,13 +401,21 @@ void main()
     czm_material material = czm_getMaterial(materialInput);
     vec4 materialColor = vec4(material.diffuse, material.alpha);
     // color = alphaBlend(materialColor, color);
-    vec4 ymColor = texture2D(u_floodArea, gl_FragCoord.xy / czm_viewport.zw);
-    if(ymColor.a > 0.0 && u_enableFlood){
-        color.xyz = mix(color.xyz, material.diffuse, material.alpha);
+    if(u_enableFlood){
+        vec4 lpos = u_inverCenterMat * vec4(v_positionMC,1.0);
+        vec2 newuv = (lpos.xy - u_floodRect.xy) / u_floodRect.zw;
+        vec4 ymColor = texture2D(u_floodArea, newuv);
+        if (newuv.x>=0.0 && newuv.x<=1.0 && newuv.y>=0.0 && newuv.y<=1.0 && ymColor.r>0.8 && ymColor.a > 0.8) {
+            color.xyz = mix(color.xyz, material.diffuse, material.alpha);
+        }
     }
-    vec4 tColor = texture2D(u_tailorArea, gl_FragCoord.xy / czm_viewport.zw);
-    if(tColor.r <= 0.5 && u_enableTailor){
-        discard;
+    if(u_enableTailor){
+        vec4 tlpos = u_inverCenterMat * vec4(v_positionMC,1.0);
+        vec2 tuv = (tlpos.xy - u_tailorRect.xy)/ u_tailorRect.zw;
+        vec4 tColor = texture2D(u_tailorArea, tuv);
+        if (tuv.x>=0.0 && tuv.x<=1.0 && tuv.y>=0.0 && tuv.y<=1.0 && tColor.r<0.5 && tColor.a < 0.5) {
+            discard;
+        }
     }
 #endif
 

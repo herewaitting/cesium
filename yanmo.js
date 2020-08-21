@@ -7,9 +7,9 @@ function YanMo(viewer, option) {
     this.minHeight = option.minHeight || 0;
     this.maxHeight = option.maxHeight || 0;
     this.currFloodHeight = this.minHeight;
+    this.center = option.center;
     this.speed = option.speed || 0;
     this.positions = option.positions;
-    this.center = undefined;
     this.trans = undefined;
     this.inverTrans = undefined;
     this.localPos = [];
@@ -17,16 +17,17 @@ function YanMo(viewer, option) {
     this.worldPos = [];
     this.yanmoTex = undefined;
     this.yanmoFbo = undefined;
+    this.type = option.type;
     this.init();
 }
 
 YanMo.prototype.init = function() {
     // 根据坐标计算矩阵、局部坐标数据等
     this.computedCenter(this.positions);
-    // 准备FBO
-    this.prepareFBO();
     // 创建正交相机
     this.prepareCamera();
+    // 准备FBO
+    this.prepareFBO();
     // 绘制polygon
     this.drawPolygon();
     this.setFloodMaterial();
@@ -48,7 +49,7 @@ YanMo.prototype.beginFlood = function() {
 }
 
 YanMo.prototype.prepareCamera = function() {
-    var maxDis = 12000;
+    var maxDis = 120000;
     this.ortCamera = {
         viewMatrix: Cesium.Matrix4.IDENTITY,
         inverseViewMatrix: Cesium.Matrix4.IDENTITY,
@@ -58,8 +59,8 @@ YanMo.prototype.prepareCamera = function() {
             latitude: 0,
             longitude: 0,
         },
-        positionWC: new Cesium.Cartesian3(0,0,10000),
-        directionWC: new Cesium.Cartesian3(0,0,-1),
+        positionWC: new Cesium.Cartesian3(0,0,0),
+        directionWC: new Cesium.Cartesian3(0,0,1),
         upWC: new Cesium.Cartesian3(0,1,0),
         rightWC: new Cesium.Cartesian3(1,0,0),
         viewProjectionMatrix: Cesium.Matrix4.IDENTITY,
@@ -69,101 +70,125 @@ YanMo.prototype.prepareCamera = function() {
     this.ortCamera.frustum.top = bg.y + bg.height;
     this.ortCamera.frustum.right = bg.x + bg.width;
     this.ortCamera.frustum.bottom = bg.y;
-    // this.ortCamera.frustum.near = -maxDis;
-    // this.ortCamera.frustum.far = maxDis;
-    // this.ortCamera.positionWC = Cesium.Cartesian3.fromDegrees(this.llhCenter.longitude, this.llhCenter.latitude, maxDis);
-    // this.ortCamera.positionCartographic = Cesium.Cartographic.fromCartesian(this.ortCamera.positionWC);
-    // this.ortCamera.directionWC = Cesium.Cartesian3.normalize(Cesium.Matrix4.multiplyByPointAsVector(this.trans, new Cesium.Cartesian3(0,0,-1),new Cesium.Cartesian3()), new Cesium.Cartesian3());
-    // this.ortCamera.upWC = Cesium.Cartesian3.normalize(Cesium.Matrix4.multiplyByPointAsVector(this.trans, new Cesium.Cartesian3(0,1,0),new Cesium.Cartesian3()), new Cesium.Cartesian3());
-    // this.ortCamera.rightWC = Cesium.Cartesian3.normalize(Cesium.Matrix4.multiplyByPointAsVector(this.trans, new Cesium.Cartesian3(1,0,0),new Cesium.Cartesian3()), new Cesium.Cartesian3());
-    // this.ortCamera.viewMatrix = Cesium.Matrix4.computeOrthographicOffCenter(
-    //     this.ortCamera.frustum.left,
-    //     this.ortCamera.frustum.right,
-    //     this.ortCamera.frustum.bottom,
-    //     this.ortCamera.frustum.top,
-    //     this.ortCamera.frustum.near,
-    //     this.ortCamera.frustum.far,
-    //     new Cesium.Matrix4()
-    // );
-    // this.ortCamera.inverseViewMatrix = Cesium.Matrix4.inverse(this.ortCamera.viewMatrix, new Cesium.Matrix4());
+    this.ortCamera.frustum.near = -maxDis;
+    this.ortCamera.frustum.far = maxDis;
+    Cesium.ExtendBySTC.floodRect = new Cesium.Cartesian4(bg.x, bg.y, bg.width, bg.height);
 }
 
 YanMo.prototype.computedCenter = function(positions) {
     if (!positions) {
         return;
     }
-    var totalLon = 0;
-    var totalLat = 0;
-    var len = positions.length;
-    positions.forEach(function(pos) {
-        var lon = pos.longitude;
-        var lat = pos.latitude;
-        totalLon += lon;
-        totalLat += lat;
+    var context = this.viewer.scene.context;
+    var polygon = new Cesium.PolygonGeometry({
+        polygonHierarchy: new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArray(positions)),
     });
-    this.llhCenter = {
-        longitude: totalLon/len,
-        latitude: totalLat/len
+    polygon = Cesium.PolygonGeometry.createGeometry(polygon);
+    if (this.center) {
+        var center = Cesium.Cartesian3.fromDegrees(this.center.longitude, this.center.latitude);
+        this.trans = Cesium.Transforms.eastNorthUpToFixedFrame(center);
+    }else {
+        var center = polygon.boundingSphere.center;
+        this.trans = Cesium.Transforms.eastNorthUpToFixedFrame(center);
     }
-    this.center = Cesium.Cartesian3.fromDegrees(totalLon/len, totalLat/len);
-    this.trans = Cesium.Transforms.eastNorthUpToFixedFrame(this.center);
     this.inverTrans = Cesium.Matrix4.inverse(this.trans, new Cesium.Matrix4());
-
-    var minX = 999999;
-    var minY = 999999;
-    var maxX = -999999;
-    var maxY = -999999;
-
-    var that = this;
-    positions.forEach(function(pos, index) {
-        var lon = pos.longitude;
-        var lat = pos.latitude;
-        var currPos = Cesium.Cartesian3.fromDegrees(lon, lat);
-        that.worldPos.push(currPos);
-        var lpoint = Cesium.Matrix4.multiplyByPoint(that.inverTrans, currPos, new Cesium.Cartesian3());
-        that.localPos.push(lpoint);
-        if (minX >= lpoint.x) {
-            minX = lpoint.x;
+    var indexs = polygon.indices;
+    console.log(polygon);
+    var positionVal = polygon.attributes.position.values;
+    var len = positionVal.length;
+    var localPos = [];
+    var localVertex = [];
+    let minX = 9999999;
+    let minY = 9999999;
+    let maxX = -9999999;
+    let maxY = -9999999;
+    for(var i=0; i<len; i+=3){
+        var currx = positionVal[i];
+        var curry = positionVal[i+1];
+        var currz = positionVal[i+2];
+        var currCar = new Cesium.Cartesian3(currx, curry, currz);
+        var localp = Cesium.Matrix4.multiplyByPoint(this.inverTrans, currCar, new Cesium.Cartesian3());
+        localp.z = 0;
+        localPos.push(localp);
+        localVertex.push(localp.x);
+        localVertex.push(localp.y);
+        localVertex.push(localp.z);
+        if (minX >= localp.x) {
+            minX = localp.x;
         }
-        if (minY >= lpoint.y) {
-            minY = lpoint.y;
+        if (minY >= localp.y) {
+            minY = localp.y;
         }
-        if (maxX <= lpoint.x) {
-            maxX = lpoint.x;
+        if (maxX <= localp.x) {
+            maxX = localp.x;
         }
-        if (maxY <= lpoint.y) {
-            maxY = lpoint.y;
+        if (maxY <= localp.y) {
+            maxY = localp.y;
         }
+    }
+    this.ratio = (maxY - minY) / (maxX - minX);
+    this.localPos = localPos;
+    var lps = new Float64Array(localVertex);
+    var bs = Cesium.BoundingSphere.fromVertices(lps);
+    var localGeo = new Cesium.Geometry({
+        attributes : {
+            position : new Cesium.GeometryAttribute({
+                componentDatatype : Cesium.ComponentDatatype.DOUBLE,
+                componentsPerAttribute : 3,
+                values : lps,
+            }),
+        },
+        indices : indexs,
+        primitiveType : Cesium.PrimitiveType.TRIANGLES,
+        boundingSphere : bs,
     });
-    var llb = new Cesium.Cartesian3(minX, minY, 0);
-    var llt = new Cesium.Cartesian3(minX, maxY, 0);
-    var lrt = new Cesium.Cartesian3(maxX, maxY, 0);
-    var lrb = new Cesium.Cartesian3(maxX, minY, 0);
-    var wlb = Cesium.Matrix4.multiplyByPoint(this.trans, llb, new Cesium.Cartesian3());
-    var wlt = Cesium.Matrix4.multiplyByPoint(this.trans, llt, new Cesium.Cartesian3());
-    var wrt = Cesium.Matrix4.multiplyByPoint(this.trans, lrt, new Cesium.Cartesian3());
-    var wrb = Cesium.Matrix4.multiplyByPoint(this.trans, lrb, new Cesium.Cartesian3());
-    that.carps = [wlb, wlt, wrt, wrb];
-    that.ratio = (maxY - minY) / (maxX - minX);
+
+    var sp = Cesium.ShaderProgram.fromCache({
+        context: context,
+        vertexShaderSource: PolygonVS,
+        fragmentShaderSource: PolygonFS,
+        attributeLocations: {
+            position: 0,
+        },
+    });
+    var vao = Cesium.VertexArray.fromGeometry({
+        context: context,
+        geometry: localGeo,
+        attributeLocations: sp._attributeLocations,
+        bufferUsage: Cesium.BufferUsage.STATIC_DRAW,
+        interleave: true,
+    });
+
+    var rs = new Cesium.RenderState();
+    rs.depthRange.near = -1000000.0;
+    rs.depthRange.far = 1000000.0;
+    this.drawAreaCommand = new Cesium.DrawCommand({
+        boundingVolume: bs,
+        primitiveType: Cesium.PrimitiveType.TRIANGLES,
+        vertexArray: vao,
+        shaderProgram: sp,
+        renderState: rs,
+        pass : Cesium.Pass.TRANSLUCENT,
+    });
 }
 
 YanMo.prototype.prepareFBO = function () {
     var context = this.viewer.scene.context;
     this.yanmoTex = new Cesium.Texture({
         context: context,
-        width: context.drawingBufferWidth,
-        height: context.drawingBufferHeight,
+        width: 4096,
+        height: 4096 * this.ratio,
         pixelFormat : Cesium.PixelFormat.RGBA,
         pixelDatatype : Cesium.PixelDatatype.FLOAT,
         flipY : false
     });
-    var depthStencilTexture = new Cesium.Texture({
-        context : context,
-        width : context.drawingBufferWidth,
-        height : context.drawingBufferHeight,
-        pixelFormat : Cesium.PixelFormat.DEPTH_STENCIL,
-        pixelDatatype : Cesium.PixelDatatype.UNSIGNED_INT_24_8
-    });
+    // var depthStencilTexture = new Cesium.Texture({
+    //     context : context,
+    //     width : context.drawingBufferWidth,
+    //     height : context.drawingBufferWidth * this.ratio,
+    //     pixelFormat : Cesium.PixelFormat.DEPTH_STENCIL,
+    //     pixelDatatype : Cesium.PixelDatatype.UNSIGNED_INT_24_8
+    // });
 
     this.yanmoFbo = new Cesium.Framebuffer({
         context: context,
@@ -174,36 +199,44 @@ YanMo.prototype.prepareFBO = function () {
 }
 
 YanMo.prototype.drawPolygon = function() {
-    // 使用局部坐标数据绘制polygon
-    var polygon = new Cesium.GeometryInstance({
-        geometry: new Cesium.PolygonGeometry({
-            polygonHierarchy: new Cesium.PolygonHierarchy(this.localPos),
-            // polygonHierarchy: new Cesium.PolygonHierarchy(this.worldPos),
-        }),
-    });
-    // GroundPrimitive
-    this.polygon =  this.viewer.scene.primitives.add(new Cesium.Primitive({
-        geometryInstances : polygon,
-        appearance: new Cesium.MaterialAppearance({
-            material : Cesium.Material.fromType("Color"),
-            faceForward : true
-        })
-    }));
-    this.polygon.customFramebuffer = this.yanmoFbo;
-    // 向cesium代码传FBO
-    Cesium.ExtendBySTC.floodArea = this.yanmoFbo;
-    this.polygon.customCamera = this.ortCamera;
-    this.polygon._clearCommand = new Cesium.ClearCommand({
-        color: new Cesium.Color(0.0, 0.0, 0.0, 0.0),
-        depth: 1.0,
-        stencil: 0,
-    });
-    this.polygon._clearCommand.framebuffer = this.yanmoFbo;
-    this.polygon.stc = true;
-    this.polygon.customViewport = new Cesium.BoundingRectangle(0, 0, 2048, 2048 * this.ratio);
+    var context = this.viewer.scene.context;
+    // var width = context.drawingBufferWidth;
+    var width = 4096;
+    var height = width * this.ratio;
+    this._passState = new Cesium.PassState(context);
+    this._passState.viewport = new Cesium.BoundingRectangle(0, 0, width, height);
+    var us = context.uniformState;
+    us.updateCamera(this.ortCamera);
+    us.updatePass(this.drawAreaCommand.pass);
+    this.drawAreaCommand.framebuffer = this.yanmoFbo;
+    this.drawAreaCommand.execute(context, this._passState);
 }
 
 YanMo.prototype.setFloodMaterial = function () {
     this.viewer.scene.globe.material = Cesium.Material.fromType("FLOOD");
+    Cesium.ExtendBySTC.inverCenterMat = this.inverTrans;
+    Cesium.ExtendBySTC.floodArea = this.yanmoFbo;
 }
+
+var PolygonVS = 
+`
+attribute vec3 position;
+void main()
+{
+    vec4 pos = vec4(position.xyz,1.0);
+    gl_Position = czm_projection*pos;
+    // gl_Position.xy = gl_Position.xy / 2.0 - vec2(0.5);
+}`;
+var PolygonFS = 
+`
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+    precision highp float;
+#else
+    precision mediump float;
+#endif
+void main()
+{
+    gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+}
+`;
 

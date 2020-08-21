@@ -33,11 +33,19 @@
                 })
             });
             let newPos = [];
+            // bianjie.forEach(function(item) {
+            //     newPos.push({
+            //         longitude: item[0],
+            //         latitude: item[1]
+            //     });
+            // });
+            var totalLon = 0;
+            var totalLat = 0;
             bianjie.forEach(function(item) {
-                newPos.push({
-                    longitude: item[0],
-                    latitude: item[1]
-                });
+                totalLon+=item[0];
+                totalLat+=item[1];
+                newPos.push(item[0]);
+                newPos.push(item[1]);
             });
             const poss = [
                 {
@@ -69,99 +77,16 @@
              myyanmo = new YanMo(viewer, {
                 positions: newPos,
                 speed: 0.1,
-                minHeight: 4740,
-                maxHeight: 7500,
+                minHeight: 0,
+                maxHeight: 800,
+                center: {
+                    longitude: totalLon/ bianjie.length,
+                    latitude: totalLat/ bianjie.length
+                }
+                // type: "local"
             });
             var myjiancai;
-            // myjiancai = new Tailor(viewer, {
-            //     positions: newPos,
-            // });
-
-            // let poss = [
-            //     [90, 30],
-            //     [90,31],
-            //     [91,31],
-            //     [91,30]
-            // ];
-            // let wldps = [];
-            // poss.forEach((item) => {
-            //     wldps.push(Cesium.Cartesian3.fromDegrees(item[0], item[1]));
-            // });
-
-            // var polygon = new Cesium.PolygonGeometry({
-            //     polygonHierarchy : new Cesium.PolygonHierarchy(wldps)
-            // });
-            // // var geometry = Cesium.PolygonGeometry.createGeometry(polygon);
-            // const pi = new Cesium.GeometryInstance({
-            //     geometry : polygon,
-            //     attributes : {
-            //         color : Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.RED)
-            //     },
-            //     id : 'top'
-            // });
-            // const stc =  viewer.scene.primitives.add(new Cesium.GroundPrimitive({
-            //     geometryInstances : pi
-            // }));
-            // const context = viewer.scene.context;
-            // var  brightColorT = new Cesium.Texture({
-            //     context: context,
-            //     width: context.drawingBufferWidth,
-            //     height: context.drawingBufferHeight,
-            //     pixelFormat : Cesium.PixelFormat.RGBA,
-            //     pixelDatatype : Cesium.PixelDatatype.FLOAT,
-            //     flipY : false
-            // });
-    
-            // var brightColorFbo = new Cesium.Framebuffer({
-            //     context: context,
-            //     colorTextures: [brightColorT],
-            //     // depthStencilTexture : depthStencilTexture,
-            //     // destroyAttachments : false
-            // });
-
-            // // var  brightColorT1 = new Cesium.Texture({
-            // //     context: context,
-            // //     width: context.drawingBufferWidth,
-            // //     height: context.drawingBufferHeight,
-            // //     pixelFormat : Cesium.PixelFormat.RGBA,
-            // //     pixelDatatype : Cesium.PixelDatatype.FLOAT,
-            // //     flipY : false
-            // // });
-    
-            // // var brightColorFbo1 = new Cesium.Framebuffer({
-            // //     context: context,
-            // //     colorTextures: [brightColorT1],
-            // //     // depthStencilTexture : depthStencilTexture,
-            // //     // destroyAttachments : false
-            // // });
-
-
-
-
-            // stc._clearCommand = new Cesium.ClearCommand({
-            // color: new Cesium.Color(0.0, 0.0, 0.0, 0.0),
-            // depth: 1.0,
-            // stencil: 0,
-            // });
-            // stc._clearCommand.framebuffer = brightColorFbo;
-
-            // function test() {
-            //     stc.customFramebuffer = brightColorFbo;
-            //     Cesium.ExtendBySTC.tailorArea = brightColorFbo;
-            //     viewer.scene.globe._surface._tileProvider.applyTailor = true;
-            // }
-
-            // // function testFlood(){
-            // //     stc.customFramebuffer = brightColorFbo;
-            // //     Cesium.ExtendBySTC.floodArea = brightColorFbo;
-            // //     viewer.scene.globe.material = Cesium.Material.fromType("TAILOR");
-            // // }
-
-            // // viewer.scene._postRender.addEventListener(function() {
-            // //     stc._clearCommand.execute(context);
-            // // });
-
-
+            viewer.scene.globe.depthTestAgainstTerrain = false;
             function test() {
                 var fragmentShaderSource =
                     'uniform sampler2D colorTexture; \n' +

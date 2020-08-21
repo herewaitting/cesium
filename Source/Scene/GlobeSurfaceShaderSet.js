@@ -102,6 +102,7 @@ GlobeSurfaceShaderSet.prototype.getShaderProgram = function (options) {
   var colorToAlpha = options.colorToAlpha;
   var showUndergroundColor = options.showUndergroundColor;
   var translucent = options.translucent;
+  // 史廷春
   var tailor = options.applyTailor;
 
   var quantization = 0;
@@ -184,6 +185,7 @@ GlobeSurfaceShaderSet.prototype.getShaderProgram = function (options) {
   }
 
   surfaceShader = shadersByFlags[flags];
+  // 史廷春
   if (tailor ||
     !defined(surfaceShader) ||
     surfaceShader.material !== this.material ||
@@ -199,6 +201,8 @@ GlobeSurfaceShaderSet.prototype.getShaderProgram = function (options) {
       ); // Need to go before GlobeFS
     }
 
+
+    // 史廷春
     if (tailor) {
       fs.defines.push("APPLY_TAILOR");
     }
